@@ -1,0 +1,143 @@
+# Import the required libraries
+import tensorflow as tf
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+
+# Define constants
+IMG_HEIGHT = 150
+IMG_WIDTH = 150
+BATCH_SIZE = 32
+
+# Create image generators for train, validation, and test datasets
+train_data_gen = ImageDataGenerator(rescale=1.0/255)
+validation_data_gen = ImageDataGenerator(rescale=1.0/255)
+test_data_gen = ImageDataGenerator(rescale=1.0/255)
+
+# Using flow_from_directory method to load data from directories
+train_data_gen = train_data_gen.flow_from_directory(
+    'cats_and_dogs/train',
+    target_size=(IMG_HEIGHT, IMG_WIDTH),
+    batch_size=BATCH_SIZE,
+    class_mode='binary'
+)
+
+validation_data_gen = validation_data_gen.flow_from_directory(
+    'cats_and_dogs/validation',
+    target_size=(IMG_HEIGHT, IMG_WIDTH),
+    batch_size=BATCH_SIZE,
+    class_mode='binary'
+)
+
+test_data_gen = test_data_gen.flow_from_directory(
+    'cats_and_dogs/test',
+    target_size=(IMG_HEIGHT, IMG_WIDTH),
+    batch_size=1,  # For test set, batch size should be 1
+    class_mode=None,  # No class mode for the test set
+    shuffle=False  # Do not shuffle the test data to maintain order
+)
+Cell 4:
+
+This cell is given to you and doesn't require any changes. It's used to plot random training images.
+
+Cell 5:
+
+python
+Copy code
+# Recreate train_data_gen with data augmentation
+train_data_gen = ImageDataGenerator(
+    rescale=1.0/255,
+    rotation_range=40,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    fill_mode='nearest'
+)
+Cell 6:
+
+This cell is given to you and doesn't require any changes. It's used to plot augmented training images.
+
+Cell 7:
+
+python
+Copy code
+# Create a model for the neural network
+model = tf.keras.Sequential([
+    tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(IMG_HEIGHT, IMG_WIDTH, 3)),
+    tf.keras.layers.MaxPooling2D(2, 2),
+    
+    tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
+    tf.keras.layers.MaxPooling2D(2, 2),
+    
+    tf.keras.layers.Conv2D(128, (3, 3), activation='relu'),
+    tf.keras.layers.MaxPooling2D(2, 2),
+    
+    tf.keras.layers.Flatten(),
+    tf.keras.layers.Dense(512, activation='relu'),
+    tf.keras.layers.Dense(1, activation='sigmoid')
+])
+
+# Compile the model
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+Cell 8:
+
+python
+Copy code
+# Train the model
+history = model.fit(
+    train_data_gen,
+    steps_per_epoch=len(train_data_gen),
+    epochs=15,  # You can tweak the number of epochs
+    validation_data=validation_data_gen,
+    validation_steps=len(validation_data_gen)
+)
+Cell 9:
+
+python
+Copy code
+import matplotlib.pyplot as plt
+
+# Visualize the accuracy and loss
+acc = history.history['accuracy']
+val_acc = history.history['val_accuracy']
+loss = history.history['loss']
+val_loss = history.history['val_loss']
+
+epochs = range(len(acc))
+
+plt.figure(figsize=(12, 4))
+plt.subplot(1, 2, 1)
+plt.plot(epochs, acc, 'r', label='Training accuracy')
+plt.plot(epochs, val_acc, 'b', label='Validation accuracy')
+plt.title('Training and Validation Accuracy')
+plt.legend()
+
+plt.subplot(1, 2, 2)
+plt.plot(epochs, loss, 'r', label='Training loss')
+plt.plot(epochs, val_loss, 'b', label='Validation loss')
+plt.title('Training and Validation Loss')
+plt.legend()
+
+plt.show()
+Cell 10:
+
+python
+Copy code
+# Get the probability that each test image is a dog or a cat
+probabilities = model.predict(test_data_gen)
+
+# Plot test images and their predicted probabilities
+def plotImages(images, probabilities):
+    plt.figure(figsize=(15, 10))
+    for i in range(len(images)):
+        plt.subplot(5, 10, i + 1)
+        plt.xticks([])
+        plt.yticks([])
+        plt.imshow(images[i])
+        plt.title(f"{probabilities[i][0]*100:.2f}% Dog")
+
+# Take the first 50 test images
+test_images = [test_data_gen[i][0][0] for i in range(50)]
+
+# Call the plotImages function
+plotImages(test_images, probabilities)
