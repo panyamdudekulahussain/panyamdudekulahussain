@@ -1,0 +1,31 @@
+import random
+
+def player(prev_play, opponent_history=[]):
+    # Initialize a dictionary to track the opponent's most frequent choices
+    opponent_choices = {"R": 0, "P": 0, "S": 0}
+
+    # Update opponent's choices based on history
+    for play in opponent_history:
+        opponent_choices[play] += 1
+
+    # Define the available moves
+    moves = ["R", "P", "S"]
+
+    # Randomly select a move if it's the first game or no information available
+    if prev_play == "":
+        return random.choice(moves)
+
+    # Determine the opponent's most frequent choice
+    opponent_most_frequent = max(opponent_choices, key=opponent_choices.get)
+
+    # Counter-strategy: Choose a move to beat the opponent's most frequent choice
+    if opponent_most_frequent == "R":
+        return "P"
+    elif opponent_most_frequent == "P":
+        return "S"
+    else:
+        return "R"
+
+# Uncomment this code to test your player function against a bot
+# from RPS_game import play
+# play(player, bot_name, num_games=1000, verbose=True)
