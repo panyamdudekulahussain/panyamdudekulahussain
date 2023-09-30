@@ -1,0 +1,115 @@
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_absolute_error
+import matplotlib.pyplot as plt
+
+# Load the dataset
+data = pd.read_csv('insurance.csv')
+
+# Convert categorical data to numbers using one-hot encoding
+data = pd.get_dummies(data, columns=['sex', 'smoker', 'region'], drop_first=True)
+
+# Split the data into features and labels
+features = data.drop(columns=['expenses'])
+labels = data['expenses']
+
+# Split the data into a training dataset (80%) and a test dataset (20%)
+train_features, test_features, train_labels, test_labels = train_test_split(
+    features, labels, test_size=0.2, random_state=42)
+
+# Normalize the data
+scaler = StandardScaler()
+train_features = scaler.fit_transform(train_features)
+test_features = scaler.transform(test_features)
+
+# Create a model
+model = tf.keras.Sequential([
+    tf.keras.layers.Input(shape=(train_features.shape[1],)),
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dense(64, activation='relu'),
+    tf.keras.layers.Dense(1)  # Output layer for regression
+])
+
+# Compile the model
+model.compile(optimizer='adam', loss='mean_absolute_error')
+
+# Train the model
+history = model.fit(train_features, train_labels, epochs=100, batch_size=32, validation_split=0.2, verbose=0)
+
+# Evaluate the model
+test_predictions = model.predict(test_features)
+mae = mean_absolute_error(test_labels, test_predictions)
+print(f"Mean Absolute Error (MAE): {mae:.2f}")
+Ensure you have the 'insurance.csv' file in your working directory or update the path accordingly.
+
+This code will load the data, preprocess it, split it into training and test datasets, create a regression model, and evaluate it using the Mean Absolute Error (MAE) metric. The MAE should be under 3500 to pass the challenge.
+
+To check the model's predictions and visualize the results, you can use the following code in the final cell:
+
+python
+Copy code
+# Plot the test predictions vs. actual test labels
+plt.figure(figsize=(10, 6))
+plt.scatter(test_labels, test_predictions)
+plt.xlabel('Actual Expenses')
+plt.ylabel('Predicted Expenses')
+plt.title('Actual vs. Predicted Expenses')
+plt.show()
+
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+import matplotlib.pyplot as plt
+
+# Load the healthcare cost dataset (You can replace this with your own dataset)
+data = pd.read_csv('insurance.csv')
+
+# Extract features and labels
+X = data[['age', 'bmi', 'children']]
+y = data['expenses']
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Create and train the linear regression model
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+# Make predictions on the test set
+y_pred = model.predict(X_test)
+
+# Calculate the coefficients and intercept of the linear regression model
+coefficients = model.coef_
+intercept = model.intercept_
+
+print(f"Coefficients: {coefficients}")
+print(f"Intercept: {intercept}")
+
+# Evaluate the model
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
+mae = mean_absolute_error(y_test, y_pred)
+mse = mean_squared_error(y_test, y_pred)
+rmse = np.sqrt(mse)
+r2 = r2_score(y_test, y_pred)
+
+print(f"Mean Absolute Error (MAE): {mae:.2f}")
+print(f"Mean Squared Error (MSE): {mse:.2f}")
+print(f"Root Mean Squared Error (RMSE): {rmse:.2f}")
+print(f"R-squared (R2): {r2:.2f}")
+
+# Visualize the actual vs. predicted values
+plt.scatter(y_test, y_pred)
+plt.xlabel('Actual Expenses')
+plt.ylabel('Predicted Expenses')
+plt.title('Actual vs. Predicted Expenses')
+plt.show()
+
+# Predict healthcare costs for a new individual
+new_data = pd.DataFrame({'age': [30], 'bmi': [25], 'children': [1]})
+predicted_cost = model.predict(new_data)
+print(f"Predicted Healthcare Cost: ${predicted_cost[0]:.2f}")
