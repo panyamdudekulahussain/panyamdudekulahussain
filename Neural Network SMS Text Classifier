@@ -1,0 +1,73 @@
+import pandas as pd
+import tensorflow as tf
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from sklearn.model_selection import train_test_split
+
+# Load the SMS Spam Collection dataset
+train_data = pd.read_csv('spam.csv', encoding='latin-1')
+
+# Remove unnecessary columns
+train_data = train_data[['v1', 'v2']]
+train_data.columns = ['label', 'message']
+
+# Convert labels to binary (0 for ham, 1 for spam)
+train_data['label'] = train_data['label'].map({'ham': 0, 'spam': 1})
+
+# Split the data into training and testing sets
+X = train_data['message']
+y = train_data['label']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Tokenize the text data
+max_words = 1000  # Maximum number of words to keep based on word frequency
+tokenizer = Tokenizer(num_words=max_words, oov_token='<OOV>')
+tokenizer.fit_on_texts(X_train)
+X_train_sequences = tokenizer.texts_to_sequences(X_train)
+X_test_sequences = tokenizer.texts_to_sequences(X_test)
+
+# Pad sequences to have the same length
+max_length = 100  # Maximum length of a message
+X_train_padded = pad_sequences(X_train_sequences, maxlen=max_length, padding='post', truncating='post')
+X_test_padded = pad_sequences(X_test_sequences, maxlen=max_length, padding='post', truncating='post')
+
+# Create and train a neural network model
+model = tf.keras.Sequential([
+    tf.keras.layers.Embedding(input_dim=max_words, output_dim=16, input_length=max_length),
+    tf.keras.layers.Flatten(),
+    tf.keras.layers.Dense(24, activation='relu'),
+    tf.keras.layers.Dense(1, activation='sigmoid')
+])
+
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+model.fit(X_train_padded, y_train, epochs=5, batch_size=64, validation_split=0.2, verbose=1)
+
+# Evaluate the model on the test data
+test_loss, test_accuracy = model.evaluate(X_test_padded, y_test)
+print(f'Test Accuracy: {test_accuracy*100:.2f}%')
+
+# Create a predict_message function
+def predict_message(message):
+    # Tokenize and pad the input message
+    message_sequence = tokenizer.texts_to_sequences([message])
+    message_padded = pad_sequences(message_sequence, maxlen=max_length, padding='post', truncating='post')
+    
+    # Make a prediction
+    prediction = model.predict(message_padded)
+    
+    # Determine the label based on the prediction
+    if prediction[0] < 0.5:
+        label = 'ham'
+        likelihood = 1 - prediction[0]
+    else:
+        label = 'spam'
+        likelihood = prediction[0]
+    
+    return [likelihood, label]
+
+# Test the predict_message function
+message = "Free entry to win a $1000 gift card!"
+prediction = predict_message(message)
+print(f"Message: {message}")
+print(f"Likelihood: {prediction[0]:.2f}")
+print(f"Label: {prediction[1]}")
